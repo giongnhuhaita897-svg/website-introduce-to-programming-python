@@ -29,3 +29,21 @@ We manually cross-checked 20 extracted techniques from our parser against the of
 | 2   | `T1566`   | Phishing                          | `initial-access`  | Windows, Linux, macOS | Matched ([Official Page](https://attack.mitre.org/techniques/T1566)) |
 
 ## 4. Setup & Team Split
+
+### 4.1. Setup & Execution
+
+- Environment: Python 3.11+, standard json & csv modules, numpy, matplotlib, and streamlit.
+
+```bash
+pip install streamlit numpy matplotlib
+streamlit run WebIntro.py
+```
+
+### 4.2 Team Split
+
+| Role         | Branch                | File                   | Key Responsibilities                                                                                                                                                  |
+| ------------ | --------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngoc(leader) | giao-dien-chinh       | WebIntro.py, README.md | Responsible for the main interface, displaying the dataset version and date, exporting the normalized_techniques.csv file, and validating 20 attack techniques.       |
+| Ha           | feature/data-loader   | data_loader.py         | Responsible for reading STIX JSON files, filtering out revoked/deprecated objects, and implementing the Technique class using Object-Oriented Programming (OOP).      |
+| Tu           | feature/search-filter | search_engine.py       | Responsible for building search indexes (indexes), implementing filtering and sorting functions, and linking relationships using STIX Object IDs.                     |
+| Dung         | dung-attack-details   | detail_view.py         | Responsible for displaying detailed attack technique information, using NumPy to perform multi-tactic statistics, and creating three visualizations using Matplotlib. |
