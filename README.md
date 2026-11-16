@@ -23,10 +23,32 @@
 
 We manually cross-checked 20 extracted techniques from our parser against the official MITRE ATT&CK Enterprise knowledge base and raw STIX JSON:
 
-| #   | ATT&CK ID | Technique Name                    | Extracted Tactics | Extracted Platforms   | Verification Result                                                  |
-| :-- | :-------- | :-------------------------------- | :---------------- | :-------------------- | :------------------------------------------------------------------- |
-| 1   | `T1059`   | Command and Scripting Interpreter | `execution`       | Windows, Linux, macOS | Matched ([Official Page](https://attack.mitre.org/techniques/T1059)) |
-| 2   | `T1566`   | Phishing                          | `initial-access`  | Windows, Linux, macOS | Matched ([Official Page](https://attack.mitre.org/techniques/T1566)) |
+## 3. Manual Cross-Check (20 Techniques Validation)
+
+We manually cross-checked the 20 extracted techniques in `sample_attack.json` against the official MITRE ATT&CK Enterprise knowledge base:
+
+| #   | ATT&CK ID   | Technique Name                       | Extracted Tactics                                       | Extracted Platforms                          | Verification Result                                                      |
+| :-- | :---------- | :----------------------------------- | :------------------------------------------------------ | :------------------------------------------- | :----------------------------------------------------------------------- |
+| 1   | `T1055.011` | Extra Window Memory Injection        | `defense-evasion`, `privilege-escalation`               | Windows                                      | Matched ([Official Page](https://attack.mitre.org/techniques/T1055/011)) |
+| 2   | `T1053.005` | Scheduled Task                       | `execution`, `persistence`, `privilege-escalation`      | Windows                                      | Matched ([Official Page](https://attack.mitre.org/techniques/T1053/005)) |
+| 3   | `T1205.002` | Socket Filters                       | `defense-evasion`, `persistence`, `command-and-control` | Linux, macOS, Windows                        | Matched ([Official Page](https://attack.mitre.org/techniques/T1205/002)) |
+| 4   | `T1560.001` | Archive via Utility                  | `collection`                                            | Linux, macOS, Windows                        | Matched ([Official Page](https://attack.mitre.org/techniques/T1560/001)) |
+| 5   | `T1021.005` | VNC                                  | `lateral-movement`                                      | Linux, Windows, macOS                        | Matched ([Official Page](https://attack.mitre.org/techniques/T1021/005)) |
+| 6   | `T1047`     | Windows Management Instrumentation   | `execution`                                             | Windows                                      | Matched ([Official Page](https://attack.mitre.org/techniques/T1047))     |
+| 7   | `T1687`     | Exploitation for Defense Impairment  | `defense-impairment`                                    | IaaS, Linux, macOS, SaaS, Windows            | Matched ([Official Page](https://attack.mitre.org/techniques/T1687))     |
+| 8   | `T1113`     | Screen Capture                       | `collection`                                            | Linux, macOS, Windows                        | Matched ([Official Page](https://attack.mitre.org/techniques/T1113))     |
+| 9   | `T1027.011` | Fileless Storage                     | `defense-evasion`                                       | Linux, Windows                               | Matched ([Official Page](https://attack.mitre.org/techniques/T1027/011)) |
+| 10  | `T1037`     | Boot or Logon Initialization Scripts | `persistence`, `privilege-escalation`                   | ESXi, Linux, macOS, Network Devices, Windows | Matched ([Official Page](https://attack.mitre.org/techniques/T1037))     |
+| 11  | `T1557`     | Adversary-in-the-Middle              | `credential-access`, `collection`                       | Linux, macOS, Network Devices, Windows       | Matched ([Official Page](https://attack.mitre.org/techniques/T1557))     |
+| 12  | `T1033`     | System Owner/User Discovery          | `discovery`                                             | Linux, macOS, Network Devices, Windows       | Matched ([Official Page](https://attack.mitre.org/techniques/T1033))     |
+| 13  | `T1583`     | Acquire Infrastructure               | `resource-development`                                  | PRE                                          | Matched ([Official Page](https://attack.mitre.org/techniques/T1583))     |
+| 14  | `T1218.011` | Rundll32                             | `defense-evasion`                                       | Windows                                      | Matched ([Official Page](https://attack.mitre.org/techniques/T1218/011)) |
+| 15  | `T1613`     | Container and Resource Discovery     | `discovery`                                             | Containers                                   | Matched ([Official Page](https://attack.mitre.org/techniques/T1613))     |
+| 16  | `T1583.007` | Serverless                           | `resource-development`                                  | PRE                                          | Matched ([Official Page](https://attack.mitre.org/techniques/T1583/007)) |
+| 17  | `T1132.001` | Standard Encoding                    | `command-and-control`                                   | ESXi, Linux, macOS, Windows                  | Matched ([Official Page](https://attack.mitre.org/techniques/T1132/001)) |
+| 18  | `T1027.009` | Embedded Payloads                    | `defense-evasion`                                       | Linux, macOS, Windows                        | Matched ([Official Page](https://attack.mitre.org/techniques/T1027/009)) |
+| 19  | `T1556.003` | Pluggable Authentication Modules     | `defense-evasion`, `persistence`, `credential-access`   | Linux, macOS                                 | Matched ([Official Page](https://attack.mitre.org/techniques/T1556/003)) |
+| 20  | `T1578.004` | Revert Cloud Instance                | `defense-evasion`                                       | IaaS                                         | Matched ([Official Page](https://attack.mitre.org/techniques/T1578/004)) |
 
 ## 4. Setup & Team Split
 
