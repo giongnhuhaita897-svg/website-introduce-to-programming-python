@@ -5,7 +5,8 @@
 - Our team is developing an offline lookup tool based on the MITRE ATT&CK Enterprise dataset
 - The main source that we use is: https://github.com/mitre-attack/attack-stix-data
 - Fixed file: enterprise-attack-20.0.json (STIX 2.1)
-- The latest version and time: The latest version is currently ATT&CK version 20.0, with the most recent modifications made between November 9 and November 14, 2026
+- Fixed Enterprise input: `enterprise-attack-20.0.json` (ATT&CK version 20.0). The application reads the actual `x_mitre_version` and `modified` values from its `x-mitre-collection` object at runtime; it does not hard-code a release date.
+- The checked-in `sample_attack.json` contains 20 normalized techniques for offline demo/testing and does not include collection metadata. In sample mode the displayed/exported version and date are `N/A`.
 
 ## 2. Data-Model Note
 
@@ -18,10 +19,6 @@
 | `kill_chain_phases ` and `x_mitre_platforms` | Used to extract lists of Tactics (phase_name, such as execution and initial-access) and affected operating systems or platforms (Windows, Linux, and macOS).                                 |
 | `type == "relationship"`                     | Identifies relationship objects that use the source_ref and target_ref fields to link a Technique (attack-pattern) to a Mitigation (course-of-action) or an Adversary Group (intrusion-set). |
 | `type == "x-mitre-collection"`               | Extracts dataset metadata including `x_mitre_version` (e.g., 20.0) and `modified` timestamp for report headers.                                                                              |
-
-## 3. Manual Cross-Check (20 Techniques Validation)
-
-We manually cross-checked 20 extracted techniques from our parser against the official MITRE ATT&CK Enterprise knowledge base and raw STIX JSON:
 
 ## 3. Manual Cross-Check (20 Techniques Validation)
 
