@@ -1,13 +1,25 @@
 """
-Search and filtering engine for MITRE ATT&CK techniques.
+Search, filtering, and analytics module for MITRE ATT&CK techniques.
 """
 
+import json
+import os
 from typing import List, Dict, Any, Optional
+
+
+def load_techniques(file_path: str = "sample_attack.json") -> List[Dict[str, Any]]:
+    """
+    Load the list of MITRE ATT&CK techniques from a JSON file.
+    """
+    if not os.path.exists(file_path):
+        return []
+    with open(file_path, "r", encoding="utf-8") as file:
+        return json.load(file)
 
 
 def search_by_id(techniques: List[Dict[str, Any]], tech_id: str) -> Optional[Dict[str, Any]]:
     """
-    Find a single technique by its exact ATT&CK ID (case-insensitive, e.g., 'T1059').
+    Find a single technique by its exact ATT&CK ID (case-insensitive).
     """
     if not tech_id:
         return None
@@ -37,37 +49,63 @@ def search_by_keyword(techniques: List[Dict[str, Any]], keyword: str) -> List[Di
     return results
 
 
-def filter_techniques(
+def search_and_filter(
     techniques: List[Dict[str, Any]],
     keyword: str = "",
     tactic: str = "All",
-    platform: str = "All"
+    platform: str = "All",
+    multi_only: bool = False,
+    sort_by: str = "ID (A-Z)"
 ) -> List[Dict[str, Any]]:
     """
-    Combined search and filter function by keyword, tactic, and platform.
+    Filter and sort MITRE ATT&CK techniques based on 6 parameters:
+    1. techniques: List of technique dictionaries.
+    2. keyword: Search term matched against ID, name, and description.
+    3. tactic: Filter by specific tactic ('All' disables this filter).
+    4. platform: Filter by specific platform ('All' disables this filter).
+    5. multi_only: If True, keep only techniques with 2 or more tactics.
+    6. sort_by: Sort order ('ID (A-Z)' or 'Name (A-Z)').
+    Returns a filtered and sorted list of technique dictionaries.
     """
-    filtered = search_by_keyword(techniques, keyword)
+    # Step 1: Filter by keyword
+    results = search_by_keyword(techniques, keyword)
 
-    if tactic and tactic.lower() != "all":
+    # Step 2: Filter by tactic
+    if tactic and tactic.strip().lower() != "all":
         target_tactic = tactic.strip().lower()
-        filtered = [
-            tech for tech in filtered
+        results = [
+            tech for tech in results
             if any(t.lower() == target_tactic for t in tech.get("tactics", []))
         ]
 
-    if platform and platform.lower() != "all":
+    # Step 3: Filter by platform
+    if platform and platform.strip().lower() != "all":
         target_platform = platform.strip().lower()
-        filtered = [
-            tech for tech in filtered
+        results = [
+            tech for tech in results
             if any(p.lower() == target_platform for p in tech.get("platforms", []))
         ]
 
-    return filtered
+    # Step 4: Filter techniques belonging to multiple tactics (len(tactics) >= 2)
+    if multi_only:
+        results = [
+            tech for tech in results
+            if len(tech.get("tactics", [])) >= 2
+        ]
+
+    # Step 5: Sort results A-Z by Name or ID
+    sort_option = (sort_by or "").strip().lower()
+    if "name" in sort_option:
+        results = sorted(results, key=lambda item: item.get("name", "").lower())
+    else:
+        results = sorted(results, key=lambda item: item.get("id", "").upper())
+
+    return results
 
 
 def get_unique_tactics_and_platforms(techniques: List[Dict[str, Any]]) -> Dict[str, List[str]]:
     """
-    Extract sorted lists of unique tactics and platforms to populate UI dropdowns.
+    Extract sorted lists of unique tactics and platforms for UI dropdown menus.
     """
     tactics = set()
     platforms = set()
@@ -82,7 +120,7 @@ def get_unique_tactics_and_platforms(techniques: List[Dict[str, Any]]) -> Dict[s
 
 def count_by_tactic_and_platform(techniques: List[Dict[str, Any]]) -> Dict[str, Dict[str, int]]:
     """
-    Generate counts of techniques grouped by tactic and platform for summary charts.
+    Count the number of techniques per tactic and per platform for summary charts.
     """
     tactic_counts: Dict[str, int] = {}
     platform_counts: Dict[str, int] = {}
@@ -100,23 +138,15 @@ def count_by_tactic_and_platform(techniques: List[Dict[str, Any]]) -> Dict[str, 
 
 
 if __name__ == "__main__":
-    sample_data = [
-        {
-            "id": "T1059",
-            "name": "Command and Scripting Interpreter",
-            "description": "Adversaries may abuse command and script interpreters to execute commands.",
-            "platforms": ["Windows", "Linux", "macOS"],
-            "tactics": ["execution"]
-        },
-        {
-            "id": "T1078",
-            "name": "Valid Accounts",
-            "description": "Adversaries may obtain and abuse credentials of existing accounts.",
-            "platforms": ["Windows", "Azure AD", "Linux"],
-            "tactics": ["defense-evasion", "persistence", "privilege-escalation", "initial-access"]
-        }
-    ]
+    sample_data = load_techniques("sample_attack.json")
+    print(f"Loaded {len(sample_data)} techniques.")
 
-    print("ID Search:", search_by_id(sample_data, "t1059")["name"])
-    print("Filter Count:", len(filter_techniques(sample_data, keyword="abuse", platform="Linux")))
-    print("Summary Counts:", count_by_tactic_and_platform(sample_data))
+    filtered = search_and_filter(
+        techniques=sample_data,
+        keyword="",
+        tactic="All",
+        platform="Windows",
+        multi_only=True,
+        sort_by="Name (A-Z)"
+    )
+    print("Filtered results:", [(item["id"], item["name"]) for item in filtered])
