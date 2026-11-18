@@ -1,152 +1,152 @@
-"""
-Search, filtering, and analytics module for MITRE ATT&CK techniques.
-"""
-
 import json
-import os
-from typing import List, Dict, Any, Optional
 
 
-def load_techniques(file_path: str = "sample_attack.json") -> List[Dict[str, Any]]:
-    """
-    Load the list of MITRE ATT&CK techniques from a JSON file.
-    """
-    if not os.path.exists(file_path):
+def load_techniques(file_path="sample_attack.json"):
+    try:
+        with open(file_path, "r", encoding="utf-8") as source_file:
+            data = json.load(source_file)
+    except FileNotFoundError:
         return []
-    with open(file_path, "r", encoding="utf-8") as file:
-        return json.load(file)
+    if isinstance(data, list):
+        return data
+    return []
 
 
-def search_by_id(techniques: List[Dict[str, Any]], tech_id: str) -> Optional[Dict[str, Any]]:
-    """
-    Find a single technique by its exact ATT&CK ID (case-insensitive).
-    """
-    if not tech_id:
-        return None
-    target_id = tech_id.strip().upper()
+def safe_text(value):
+    if value is None:
+        return ""
+    return str(value)
+
+
+def safe_list(value):
+    if isinstance(value, list):
+        return value
+    return []
+
+
+def build_indexes(techniques):
+    by_id = {}
+    by_tactic = {}
+    by_platform = {}
     for tech in techniques:
-        if tech.get("id", "").upper() == target_id:
-            return tech
-    return None
+        if not isinstance(tech, dict):
+            continue
+        tech_id = safe_text(tech.get("id")).strip().upper()
+        if tech_id:
+            by_id[tech_id] = tech
+        for tactic in safe_list(tech.get("tactics")):
+            tactic_name = safe_text(tactic).strip().lower()
+            if tactic_name:
+                if tactic_name not in by_tactic:
+                    by_tactic[tactic_name] = []
+                by_tactic[tactic_name].append(tech)
+        for platform in safe_list(tech.get("platforms")):
+            platform_name = safe_text(platform).strip().lower()
+            if platform_name:
+                if platform_name not in by_platform:
+                    by_platform[platform_name] = []
+                by_platform[platform_name].append(tech)
+    return {"by_id": by_id, "by_tactic": by_tactic, "by_platform": by_platform}
 
 
-def search_by_keyword(techniques: List[Dict[str, Any]], keyword: str) -> List[Dict[str, Any]]:
-    """
-    Search techniques where the keyword appears in the ID, name, or description.
-    """
-    if not keyword or not keyword.strip():
-        return techniques
+def search_by_id(techniques, tech_id):
+    target_id = safe_text(tech_id).strip().upper()
+    if not target_id:
+        return None
+    indexes = build_indexes(techniques)
+    return indexes["by_id"].get(target_id)
 
-    query = keyword.strip().lower()
+
+def search_by_keyword(techniques, keyword):
+    query = safe_text(keyword).strip().lower()
     results = []
     for tech in techniques:
-        tech_id = tech.get("id", "").lower()
-        name = tech.get("name", "").lower()
-        description = tech.get("description", "").lower()
-
+        if not isinstance(tech, dict):
+            continue
+        if not query:
+            results.append(tech)
+            continue
+        tech_id = safe_text(tech.get("id")).lower()
+        name = safe_text(tech.get("name")).lower()
+        description = safe_text(tech.get("description")).lower()
         if query in tech_id or query in name or query in description:
             results.append(tech)
     return results
 
 
-def search_and_filter(
-    techniques: List[Dict[str, Any]],
-    keyword: str = "",
-    tactic: str = "All",
-    platform: str = "All",
-    multi_only: bool = False,
-    sort_by: str = "ID (A-Z)"
-) -> List[Dict[str, Any]]:
-    """
-    Filter and sort MITRE ATT&CK techniques based on 6 parameters:
-    1. techniques: List of technique dictionaries.
-    2. keyword: Search term matched against ID, name, and description.
-    3. tactic: Filter by specific tactic ('All' disables this filter).
-    4. platform: Filter by specific platform ('All' disables this filter).
-    5. multi_only: If True, keep only techniques with 2 or more tactics.
-    6. sort_by: Sort order ('ID (A-Z)' or 'Name (A-Z)').
-    Returns a filtered and sorted list of technique dictionaries.
-    """
-    # Step 1: Filter by keyword
+def search_and_filter(techniques, keyword="", tactic="All", platform="All", multi_only=False, sort_by="ID (A-Z)"):
     results = search_by_keyword(techniques, keyword)
+    tactic_value = safe_text(tactic).strip().lower()
+    platform_value = safe_text(platform).strip().lower()
+    filtered = []
+    for tech in results:
+        include = True
+        tactics = safe_list(tech.get("tactics"))
+        platforms = safe_list(tech.get("platforms"))
+        if tactic_value and tactic_value != "all":
+            found = False
+            for item in tactics:
+                if safe_text(item).strip().lower() == tactic_value:
+                    found = True
+            if not found:
+                include = False
+        if platform_value and platform_value != "all":
+            found = False
+            for item in platforms:
+                if safe_text(item).strip().lower() == platform_value:
+                    found = True
+            if not found:
+                include = False
+        if multi_only and len(tactics) < 2:
+            include = False
+        if include:
+            filtered.append(tech)
 
-    # Step 2: Filter by tactic
-    if tactic and tactic.strip().lower() != "all":
-        target_tactic = tactic.strip().lower()
-        results = [
-            tech for tech in results
-            if any(t.lower() == target_tactic for t in tech.get("tactics", []))
-        ]
-
-    # Step 3: Filter by platform
-    if platform and platform.strip().lower() != "all":
-        target_platform = platform.strip().lower()
-        results = [
-            tech for tech in results
-            if any(p.lower() == target_platform for p in tech.get("platforms", []))
-        ]
-
-    # Step 4: Filter techniques belonging to multiple tactics (len(tactics) >= 2)
-    if multi_only:
-        results = [
-            tech for tech in results
-            if len(tech.get("tactics", [])) >= 2
-        ]
-
-    # Step 5: Sort results A-Z by Name or ID
-    sort_option = (sort_by or "").strip().lower()
-    if "name" in sort_option:
-        results = sorted(results, key=lambda item: item.get("name", "").lower())
-    else:
-        results = sorted(results, key=lambda item: item.get("id", "").upper())
-
-    return results
+    sort_name = "name" in safe_text(sort_by).lower()
+    for index in range(len(filtered)):
+        for other_index in range(index + 1, len(filtered)):
+            if sort_name:
+                first = safe_text(filtered[index].get("name")).lower()
+                second = safe_text(filtered[other_index].get("name")).lower()
+            else:
+                first = safe_text(filtered[index].get("id")).upper()
+                second = safe_text(filtered[other_index].get("id")).upper()
+            if first > second:
+                filtered[index], filtered[other_index] = filtered[other_index], filtered[index]
+    return filtered
 
 
-def get_unique_tactics_and_platforms(techniques: List[Dict[str, Any]]) -> Dict[str, List[str]]:
-    """
-    Extract sorted lists of unique tactics and platforms for UI dropdown menus.
-    """
+def get_unique_tactics_and_platforms(techniques):
     tactics = set()
     platforms = set()
     for tech in techniques:
-        tactics.update(tech.get("tactics", []))
-        platforms.update(tech.get("platforms", []))
-    return {
-        "tactics": sorted(list(tactics)),
-        "platforms": sorted(list(platforms))
-    }
+        if not isinstance(tech, dict):
+            continue
+        for tactic in safe_list(tech.get("tactics")):
+            if safe_text(tactic):
+                tactics.add(safe_text(tactic))
+        for platform in safe_list(tech.get("platforms")):
+            if safe_text(platform):
+                platforms.add(safe_text(platform))
+    return {"tactics": sorted(tactics), "platforms": sorted(platforms)}
 
 
-def count_by_tactic_and_platform(techniques: List[Dict[str, Any]]) -> Dict[str, Dict[str, int]]:
-    """
-    Count the number of techniques per tactic and per platform for summary charts.
-    """
-    tactic_counts: Dict[str, int] = {}
-    platform_counts: Dict[str, int] = {}
-
+def count_by_tactic_and_platform(techniques):
+    tactic_counts = {}
+    platform_counts = {}
     for tech in techniques:
-        for tactic in tech.get("tactics", []):
-            tactic_counts[tactic] = tactic_counts.get(tactic, 0) + 1
-        for platform in tech.get("platforms", []):
-            platform_counts[platform] = platform_counts.get(platform, 0) + 1
-
-    return {
-        "tactics": tactic_counts,
-        "platforms": platform_counts
-    }
+        if not isinstance(tech, dict):
+            continue
+        for tactic in safe_list(tech.get("tactics")):
+            if tactic:
+                tactic_counts[tactic] = tactic_counts.get(tactic, 0) + 1
+        for platform in safe_list(tech.get("platforms")):
+            if platform:
+                platform_counts[platform] = platform_counts.get(platform, 0) + 1
+    return {"tactics": tactic_counts, "platforms": platform_counts}
 
 
 if __name__ == "__main__":
     sample_data = load_techniques("sample_attack.json")
-    print(f"Loaded {len(sample_data)} techniques.")
-
-    filtered = search_and_filter(
-        techniques=sample_data,
-        keyword="",
-        tactic="All",
-        platform="Windows",
-        multi_only=True,
-        sort_by="Name (A-Z)"
-    )
-    print("Filtered results:", [(item["id"], item["name"]) for item in filtered])
+    print("Loaded techniques:", len(sample_data))
+    print("Index sizes:", len(build_indexes(sample_data)["by_id"]))

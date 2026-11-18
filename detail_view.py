@@ -4,6 +4,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+def safe_text(value, fallback=""):
+    if value is None:
+        return fallback
+    return str(value)
+
+
+def safe_list(value):
+    if isinstance(value, list):
+        return value
+    return []
+
+
 
 # 1. DISPLAY TECHNIQUE DETAILS
 
@@ -13,7 +25,7 @@ def render_technique_detail(tech):
         st.warning("Technique not found.")
         return
 
-    st.title(tech.get("name", "Unknown Technique"))
+    st.title(safe_text(tech.get("name"), "Unknown Technique"))
 
     st.write("**Technique ID:**", tech.get("id", "N/A"))
 
@@ -21,24 +33,33 @@ def render_technique_detail(tech):
     st.write(tech.get("description", "No description available."))
 
     st.subheader("Platforms")
-    platforms = tech.get("platforms", [])
-    st.write(", ".join(platforms) if platforms else "No platform information available.")
+    platforms = safe_list(tech.get("platforms"))
+    platform_names = []
+    for platform in platforms:
+        if platform is not None:
+            platform_names.append(str(platform))
+    st.write(", ".join(platform_names) if platform_names else "No platform information available.")
 
     st.subheader("Tactics")
-    tactics = tech.get("tactics", [])
-    st.write(", ".join(tactics) if tactics else "No tactic information available.")
+    tactics = safe_list(tech.get("tactics"))
+    tactic_names = []
+    for tactic in tactics:
+        if tactic is not None:
+            tactic_names.append(str(tactic))
+    st.write(", ".join(tactic_names) if tactic_names else "No tactic information available.")
 
     st.subheader("Mitigations")
 
-    mitigations = tech.get("mitigations", [])
+    mitigations = safe_list(tech.get("mitigations"))
 
     if mitigations:
         for mitigation in mitigations:
-            st.markdown(f"**{mitigation.get('name', 'Unknown')}**")
+            if not isinstance(mitigation, dict):
+                continue
+            st.markdown(f"**{safe_text(mitigation.get('name'), 'Unknown')}**")
             st.write(
                 mitigation.get(
-                    "description",
-                    "No description available."
+                    "description", "No description available."
                 )
             )
     else:
@@ -46,7 +67,7 @@ def render_technique_detail(tech):
 
     st.subheader("References")
 
-    url = tech.get("url")
+    url = safe_text(tech.get("url"))
 
     if url:
         st.markdown(f"[View on MITRE ATT&CK]({url})")
@@ -62,9 +83,13 @@ def count_by_tactic(techniques):
     all_tactics = []
 
     for technique in techniques:
-        tactics = technique.get("tactics", [])
+        tactics = safe_list(technique.get("tactics")) if isinstance(technique, dict) else []
+        clean_tactics = []
+        for tactic in tactics:
+            if tactic is not None:
+                clean_tactics.append(str(tactic))
 
-        for tactic in set(tactics):
+        for tactic in set(clean_tactics):
             all_tactics.append(tactic)
 
     if not all_tactics:
@@ -86,9 +111,13 @@ def count_by_platform(techniques):
     all_platforms = []
 
     for technique in techniques:
-        platforms = technique.get("platforms", [])
+        platforms = safe_list(technique.get("platforms")) if isinstance(technique, dict) else []
+        clean_platforms = []
+        for platform in platforms:
+            if platform is not None:
+                clean_platforms.append(str(platform))
 
-        for platform in set(platforms):
+        for platform in set(clean_platforms):
             all_platforms.append(platform)
 
     if not all_platforms:
@@ -112,7 +141,7 @@ def count_tactic_types(techniques):
     no_tactic = 0
 
     for technique in techniques:
-        tactics = technique.get("tactics", [])
+        tactics = safe_list(technique.get("tactics")) if isinstance(technique, dict) else []
 
         if len(tactics) == 1:
             single_tactic += 1
