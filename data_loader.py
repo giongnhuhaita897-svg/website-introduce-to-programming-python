@@ -112,6 +112,7 @@ def load_techniques(filepath="enterprise-attack (1).json"):
         if len(techniques) == 20:
             break
     return techniques, version_info
+
 #MAIN EXECUTION
 if __name__ == "__main__":
     file_name = "enterprise-attack (1).json"
@@ -128,4 +129,3 @@ if __name__ == "__main__":
     except FileNotFoundError:
         print(f"Error '{file_name}' not found in the directory.")
         print("Please ensure the MITRE STIX JSON file is placed correctly.")
- 
